@@ -1,0 +1,196 @@
+// ============================================================================
+// SMART TRAFFIC LIGHT CONTROLLER - COMPLETE SYSTEM
+// ============================================================================
+// Top-level module integrating all components
+// Features:
+// - 4-way junction traffic control (lanes a, b, c, d)
+// - Ultrasonic sensor-based traffic density detection
+// - Sound sensor priority for lane 'a'
+// - Default priority: a > b > c > d
+// - Green: 2s, Yellow: 2s, Red: auto
+// ===========================================================================
+
+// ============================================================================
+// MODULE 2: TRAFFIC LIGHT FSM CONTROLLER
+// ============================================================================
+module traffic_fsm(
+    input  wire clk,              // 50 MHz system clock
+    input  wire reset_n,          // Active-LOW reset
+    input  wire A,                // Traffic detected on lane a
+    input  wire B,                // Traffic detected on lane b
+    input  wire C,                // Traffic detected on lane c
+    input  wire D,                // Traffic detected on lane d
+    input  wire sound_sensor,     // Sound sensor on lane a (priority)
+    output reg [2:0] lane_a_lights, // [G, Y, R]
+    output reg [2:0] lane_b_lights,
+    output reg [2:0] lane_c_lights,
+    output reg [2:0] lane_d_lights
+);
+
+    // Light encoding
+    localparam GREEN  = 3'b100;
+    localparam YELLOW = 3'b010;
+    localparam RED    = 3'b001;
+    
+    // Timing parameters (50MHz clock)
+    parameter GREEN_TIME  = 100_000_000;  // 2 seconds
+    parameter YELLOW_TIME = 100_000_000;  // 2 seconds
+    
+    // State definitions
+    localparam LANE_A_GREEN  = 4'd0;
+    localparam LANE_A_YELLOW = 4'd1;
+    localparam LANE_B_GREEN  = 4'd2;
+    localparam LANE_B_YELLOW = 4'd3;
+    localparam LANE_C_GREEN  = 4'd4;
+    localparam LANE_C_YELLOW = 4'd5;
+    localparam LANE_D_GREEN  = 4'd6;
+    localparam LANE_D_YELLOW = 4'd7;
+    localparam DECIDE_NEXT   = 4'd8;
+    
+    reg [3:0] state, next_state;
+    reg [31:0] timer;
+    reg [1:0] priority_lane; // 0=a, 1=b, 2=c, 3=d
+    
+    // Timer management
+    always @(posedge clk or negedge reset_n) begin
+        if (!reset_n) begin
+            timer <= 0;
+            state <= DECIDE_NEXT;
+        end else begin
+            if (state != next_state) begin
+                timer <= 0;
+            end else begin
+                timer <= timer + 1;
+            end
+            state <= next_state;
+        end
+    end
+    
+    // Priority decision logic
+    always @(*) begin
+        // Sound sensor has highest priority for lane 'a'
+        if (sound_sensor || A) begin
+            priority_lane = 2'd0; // Lane a
+        end else if (B) begin
+            priority_lane = 2'd1; // Lane b
+        end else if (C) begin
+            priority_lane = 2'd2; // Lane c
+        end else if (D) begin
+            priority_lane = 2'd3; // Lane d
+        end else begin
+            // No traffic detected, follow default order a>b>c>d
+            priority_lane = 2'd0;
+        end
+    end
+    
+    // Next state logic
+    always @(*) begin
+        next_state = state;
+        
+        case (state)
+            LANE_A_GREEN: begin
+                if (timer >= GREEN_TIME)
+                    next_state = LANE_A_YELLOW;
+            end
+            
+            LANE_A_YELLOW: begin
+                if (timer >= YELLOW_TIME)
+                    next_state = DECIDE_NEXT;
+            end
+            
+            LANE_B_GREEN: begin
+                if (timer >= GREEN_TIME)
+                    next_state = LANE_B_YELLOW;
+            end
+            
+            LANE_B_YELLOW: begin
+                if (timer >= YELLOW_TIME)
+                    next_state = DECIDE_NEXT;
+            end
+            
+            LANE_C_GREEN: begin
+                if (timer >= GREEN_TIME)
+                    next_state = LANE_C_YELLOW;
+            end
+            
+            LANE_C_YELLOW: begin
+                if (timer >= YELLOW_TIME)
+                    next_state = DECIDE_NEXT;
+            end
+            
+            LANE_D_GREEN: begin
+                if (timer >= GREEN_TIME)
+                    next_state = LANE_D_YELLOW;
+            end
+            
+            LANE_D_YELLOW: begin
+                if (timer >= YELLOW_TIME)
+                    next_state = DECIDE_NEXT;
+            end
+            
+            DECIDE_NEXT: begin
+                // Decide next lane based on priority
+                case (priority_lane)
+                    2'd0: next_state = LANE_A_GREEN;
+                    2'd1: next_state = LANE_B_GREEN;
+                    2'd2: next_state = LANE_C_GREEN;
+                    2'd3: next_state = LANE_D_GREEN;
+                endcase
+            end
+            
+            default: next_state = DECIDE_NEXT;
+        endcase
+    end
+    
+    // Output logic
+    always @(*) begin
+        // Default: all red
+        lane_a_lights = RED;
+        lane_b_lights = RED;
+        lane_c_lights = RED;
+        lane_d_lights = RED;
+        
+        case (state)
+            LANE_A_GREEN: begin
+                lane_a_lights = GREEN;
+            end
+            
+            LANE_A_YELLOW: begin
+                lane_a_lights = YELLOW;
+            end
+            
+            LANE_B_GREEN: begin
+                lane_b_lights = GREEN;
+            end
+            
+            LANE_B_YELLOW: begin
+                lane_b_lights = YELLOW;
+            end
+            
+            LANE_C_GREEN: begin
+                lane_c_lights = GREEN;
+            end
+            
+            LANE_C_YELLOW: begin
+                lane_c_lights = YELLOW;
+            end
+            
+            LANE_D_GREEN: begin
+                lane_d_lights = GREEN;
+            end
+            
+            LANE_D_YELLOW: begin
+                lane_d_lights = YELLOW;
+            end
+            
+            DECIDE_NEXT: begin
+                // All red during transition
+                lane_a_lights = RED;
+                lane_b_lights = RED;
+                lane_c_lights = RED;
+                lane_d_lights = RED;
+            end
+        endcase
+    end
+
+endmodule
