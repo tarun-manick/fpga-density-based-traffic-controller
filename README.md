@@ -1,5 +1,3 @@
-# fpga-density-based-traffic-controller
-Real-time density-based traffic light controller using FPGA, ultrasonic and sound sensors.
 # Real-Time Density-Based Dynamic Traffic Light Controller (FPGA)
 
 A real-time, density-based Traffic Light Controller (TLC) implemented in **Verilog** on an **Altera Cyclone II FPGA**. The system replaces conventional fixed-timer traffic lights with an adaptive controller that allocates green time based on live vehicle density, and automatically pre-empts signals for emergency vehicles.
