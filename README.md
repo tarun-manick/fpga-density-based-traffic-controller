@@ -26,7 +26,7 @@ A real-time, density-based Traffic Light Controller (TLC) implemented in **Veril
     traffic_fsm.v        — Central controller FSM (lane selection + timing)
     smart_traffic_controller.v — Top-level module instantiating all sub-modules
     Final_Testbench.v — Testbench codes
-/sim                 — Testbenches and simulation waveform screenshots
+/sim                 — simulation waveform screenshots
 /docs                — Full project report, block diagrams, FSM flowcharts, pin assignment
 ```
 
