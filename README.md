@@ -21,13 +21,13 @@ A real-time, density-based Traffic Light Controller (TLC) implemented in **Veril
 
 ```
 /rtl                — Verilog source modules
-    ultrasonicdist.v     — 6-state FSM for HC-SR04 trigger/echo/distance measurement
-    soundsensorled.v     — Siren edge-detection and emergency latch logic
+    ultrasonic_dist.v     — 6-state FSM for HC-SR04 trigger/echo/distance measurement
+    sound_sensor_led.v     — Siren edge-detection and emergency latch logic
     traffic_fsm.v        — Central controller FSM (lane selection + timing)
-    smarttrafficcontroller.v — Top-level module instantiating all sub-modules
+    smart_traffic_controller.v — Top-level module instantiating all sub-modules
+    Final_Testbench.v — Testbench codes
 /sim                 — Testbenches and simulation waveform screenshots
 /docs                — Full project report, block diagrams, FSM flowcharts, pin assignment
-/constraints         — Quartus .qsf pin planner file
 ```
 
 ## System Architecture
